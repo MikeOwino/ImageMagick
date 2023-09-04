@@ -43,7 +43,7 @@ jobs:
         apt-get install libheif-dev -y
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install ${{ matrix.compiler }}
       if: matrix.compiler == 'clang'
