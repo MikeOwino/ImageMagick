@@ -484,7 +484,7 @@ static Image *ReadDNGImage(const ImageInfo *image_info,ExceptionInfo *exception)
         return(DestroyImageList(image));
       }
     libraw_set_dataerror_handler(raw_info,LibRawDataError,exception);
-#if defined(MAGICKCORE_WINDOWS_SUPPORT) && defined(_MSC_VER) && (_MSC_VER > 1310)
+#if defined(MAGICKCORE_WINDOWS_SUPPORT)
     {
       wchar_t
         *path;
@@ -514,6 +514,7 @@ static Image *ReadDNGImage(const ImageInfo *image_info,ExceptionInfo *exception)
     image->page.y=raw_info->sizes.top_margin;
     image->orientation=LibRawFlipToOrientation(raw_info->sizes.flip);
     ReadLibRawThumbnail(image_info,image,raw_info,exception);
+    SetDNGProperties(image,raw_info,exception);
     if (image_info->ping != MagickFalse)
       {
         libraw_close(raw_info);
@@ -592,7 +593,7 @@ static Image *ReadDNGImage(const ImageInfo *image_info,ExceptionInfo *exception)
           }
         if ((raw_image->colors) == 2 || (raw_image->colors > 3))
           SetPixelAlpha(image,ScaleShortToQuantum(*p++),q);
-        q+=GetPixelChannels(image);
+        q+=(ptrdiff_t) GetPixelChannels(image);
       }
       if (SyncAuthenticPixels(image,exception) == MagickFalse)
         break;
@@ -622,7 +623,6 @@ static Image *ReadDNGImage(const ImageInfo *image_info,ExceptionInfo *exception)
         (void) SetImageProfilePrivate(image,profile,exception);
       }
 #endif
-    SetDNGProperties(image,raw_info,exception);
     libraw_close(raw_info);
     return(image);
   }

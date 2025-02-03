@@ -17,7 +17,7 @@
 %                                 April 2014                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2014 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -254,7 +254,7 @@ static Image *ReadSCREENSHOTImage(const ImageInfo *image_info,
           SetPixelBlue(screen,ScaleCharToQuantum(p->rgbBlue),q);
           SetPixelAlpha(screen,OpaqueAlpha,q);
           p++;
-          q+=GetPixelChannels(screen);
+          q+=(ptrdiff_t) GetPixelChannels(screen);
         }
         if (SyncAuthenticPixels(screen,exception) == MagickFalse)
           break;

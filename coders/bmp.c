@@ -429,7 +429,7 @@ static size_t EncodeImage(Image *image,const size_t bytes_per_line,
           break;
       *q++=(unsigned char) i;
       *q++=(*p);
-      p+=i;
+      p+=(ptrdiff_t) i;
     }
     /*
       End of line.
@@ -841,6 +841,11 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
             bmp_info.blue_mask=ReadBlobLSBLong(image);
             if (bmp_info.compression == BI_ALPHABITFIELDS)
               bmp_info.alpha_mask=ReadBlobLSBLong(image);
+            if (((bmp_info.size == 40) ||
+                 (bmp_info.compression == BI_ALPHABITFIELDS)) &&
+                 (bmp_info.bits_per_pixel != 16) &&
+                 (bmp_info.bits_per_pixel != 32))
+              ThrowReaderException(CorruptImageError,"UnsupportedBitsPerPixel");
           }
         if (bmp_info.size > 40)
           {
@@ -1021,9 +1026,10 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
     image->columns=(size_t) MagickAbsoluteValue(bmp_info.width);
     image->rows=(size_t) MagickAbsoluteValue(bmp_info.height);
     image->depth=bmp_info.bits_per_pixel <= 8 ? bmp_info.bits_per_pixel : 8;
-    image->alpha_trait=((bmp_info.alpha_mask != 0) ||
-      ((bmp_info.compression == BI_RGB) && (bmp_info.bits_per_pixel == 32))) ?
-      BlendPixelTrait : UndefinedPixelTrait;
+    image->alpha_trait=((bmp_info.alpha_mask != 0) &&
+      ((bmp_info.compression == BI_BITFIELDS) || 
+       (bmp_info.compression == BI_ALPHABITFIELDS))) ? BlendPixelTrait :
+       UndefinedPixelTrait;
     if (bmp_info.bits_per_pixel < 16)
       {
         size_t
@@ -1168,7 +1174,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
                     y=-1;
                     break;
                   }
-                p+=4;
+                p+=(ptrdiff_t) 4;
               }
             }
           }
@@ -1277,7 +1283,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
             {
               index=(Quantum) (((*p) & (0x80 >> bit)) != 0 ? 0x01 : 0x00);
               SetPixelIndex(image,index,q);
-              q+=GetPixelChannels(image);
+              q+=(ptrdiff_t) GetPixelChannels(image);
             }
             p++;
           }
@@ -1287,7 +1293,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
               {
                 index=(Quantum) (((*p) & (0x80 >> bit)) != 0 ? 0x01 : 0x00);
                 SetPixelIndex(image,index,q);
-                q+=GetPixelChannels(image);
+                q+=(ptrdiff_t) GetPixelChannels(image);
               }
               p++;
             }
@@ -1320,10 +1326,10 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
             ValidateColormapValue(image,(ssize_t) ((*p >> 4) & 0x0f),&index,
               exception);
             SetPixelIndex(image,index,q);
-            q+=GetPixelChannels(image);
+            q+=(ptrdiff_t) GetPixelChannels(image);
             ValidateColormapValue(image,(ssize_t) (*p & 0x0f),&index,exception);
             SetPixelIndex(image,index,q);
-            q+=GetPixelChannels(image);
+            q+=(ptrdiff_t) GetPixelChannels(image);
             p++;
           }
           if ((image->columns % 2) != 0)
@@ -1331,7 +1337,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
               ValidateColormapValue(image,(ssize_t) ((*p >> 4) & 0xf),&index,
                 exception);
               SetPixelIndex(image,index,q);
-              q+=GetPixelChannels(image);
+              q+=(ptrdiff_t) GetPixelChannels(image);
               p++;
               x++;
             }
@@ -1368,7 +1374,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
           {
             ValidateColormapValue(image,(ssize_t) *p++,&index,exception);
             SetPixelIndex(image,index,q);
-            q+=GetPixelChannels(image);
+            q+=(ptrdiff_t) GetPixelChannels(image);
           }
           if (SyncAuthenticPixels(image,exception) == MagickFalse)
             break;
@@ -1414,19 +1420,19 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
             pixel|=(unsigned int) (*p++) << 8;
             red=((pixel & bmp_info.red_mask) << shift.red) >> 16;
             if (quantum_bits.red == 5)
-              red|=((red & 0xe000) >> 5);
+              red|=((red & 0xff00) >> 5);
             if (quantum_bits.red <= 8)
               red|=((red & 0xff00) >> 8);
             green=((pixel & bmp_info.green_mask) << shift.green) >> 16;
             if (quantum_bits.green == 5)
-              green|=((green & 0xe000) >> 5);
+              green|=((green & 0xff00) >> 5);
             if (quantum_bits.green == 6)
-              green|=((green & 0xc000) >> 6);
+              green|=((green & 0xff00) >> 6);
             if (quantum_bits.green <= 8)
               green|=((green & 0xff00) >> 8);
             blue=((pixel & bmp_info.blue_mask) << shift.blue) >> 16;
             if (quantum_bits.blue == 5)
-              blue|=((blue & 0xe000) >> 5);
+              blue|=((blue & 0xff00) >> 5);
             if (quantum_bits.blue <= 8)
               blue|=((blue & 0xff00) >> 8);
             SetPixelRed(image,ScaleShortToQuantum((unsigned short) red),q);
@@ -1438,10 +1444,10 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
                 alpha=((pixel & bmp_info.alpha_mask) << shift.alpha) >> 16;
                 if (quantum_bits.alpha <= 8)
                   alpha|=((alpha & 0xff00) >> 8);
-                SetPixelAlpha(image,ScaleShortToQuantum(
-                  (unsigned short) alpha),q);
+                SetPixelAlpha(image,ScaleShortToQuantum((unsigned short)
+                  alpha),q);
               }
-            q+=GetPixelChannels(image);
+            q+=(ptrdiff_t) GetPixelChannels(image);
           }
           if (SyncAuthenticPixels(image,exception) == MagickFalse)
             break;
@@ -1474,7 +1480,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
             SetPixelGreen(image,ScaleCharToQuantum(*p++),q);
             SetPixelRed(image,ScaleCharToQuantum(*p++),q);
             SetPixelAlpha(image,OpaqueAlpha,q);
-            q+=GetPixelChannels(image);
+            q+=(ptrdiff_t) GetPixelChannels(image);
           }
           if (SyncAuthenticPixels(image,exception) == MagickFalse)
             break;
@@ -1539,7 +1545,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
                 SetPixelAlpha(image,ScaleShortToQuantum(
                   (unsigned short) alpha),q);
               }
-            q+=GetPixelChannels(image);
+            q+=(ptrdiff_t) GetPixelChannels(image);
           }
           if (SyncAuthenticPixels(image,exception) == MagickFalse)
             break;
@@ -1576,7 +1582,7 @@ static Image *ReadBMPImage(const ImageInfo *image_info,ExceptionInfo *exception)
             SetPixelGreen(image,ScaleShortToQuantum(*p16++),q);
             SetPixelRed(image,ScaleShortToQuantum(*p16++),q);
             SetPixelAlpha(image,ScaleShortToQuantum(*p16++),q);
-            q+=GetPixelChannels(image);
+            q+=(ptrdiff_t) GetPixelChannels(image);
           }
           if (SyncAuthenticPixels(image,exception) == MagickFalse)
             break;
@@ -2120,7 +2126,7 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
                 bit=0;
                 byte=0;
               }
-             p+=GetPixelChannels(image);
+             p+=(ptrdiff_t) GetPixelChannels(image);
            }
            if (bit != 0)
              {
@@ -2171,7 +2177,7 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
                 nibble=0;
                 byte=0;
               }
-            p+=GetPixelChannels(image);
+            p+=(ptrdiff_t) GetPixelChannels(image);
           }
           if (nibble != 0)
             {
@@ -2205,7 +2211,7 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
           for (x=0; x < (ssize_t) image->columns; x++)
           {
             *q++=(unsigned char) ((ssize_t) GetPixelIndex(image,p));
-            p+=GetPixelChannels(image);
+            p+=(ptrdiff_t) GetPixelChannels(image);
           }
           for ( ; x < (ssize_t) bytes_per_line; x++)
             *q++=0x00;
@@ -2269,8 +2275,8 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
                   GetPixelBlue(image,p),31));
               }
             *((unsigned short *) q)=pixel;
-            q+=2;
-            p+=GetPixelChannels(image);
+            q+=(ptrdiff_t) 2;
+            p+=(ptrdiff_t) GetPixelChannels(image);
           }
           for (x=2L*(ssize_t) image->columns; x < (ssize_t) bytes_per_line; x++)
             *q++=0x00;
@@ -2300,7 +2306,7 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
             *q++=ScaleQuantumToChar(GetPixelBlue(image,p));
             *q++=ScaleQuantumToChar(GetPixelGreen(image,p));
             *q++=ScaleQuantumToChar(GetPixelRed(image,p));
-            p+=GetPixelChannels(image);
+            p+=(ptrdiff_t) GetPixelChannels(image);
           }
           for (x=3L*(ssize_t) image->columns; x < (ssize_t) bytes_per_line; x++)
             *q++=0x00;
@@ -2327,21 +2333,11 @@ static MagickBooleanType WriteBMPImage(const ImageInfo *image_info,Image *image,
           q=pixels+((ssize_t) image->rows-y-1)*(ssize_t) bytes_per_line;
           for (x=0; x < (ssize_t) image->columns; x++)
           {
-            Quantum alpha=GetPixelAlpha(image,p);
-            if ((type == 3) && alpha == TransparentAlpha)
-              {
-                *q++=255;
-                *q++=255;
-                *q++=255;
-              }
-            else
-              {
-                *q++=ScaleQuantumToChar(GetPixelBlue(image,p));
-                *q++=ScaleQuantumToChar(GetPixelGreen(image,p));
-                *q++=ScaleQuantumToChar(GetPixelRed(image,p));
-              }
-            *q++=ScaleQuantumToChar(alpha);
-            p+=GetPixelChannels(image);
+            *q++=ScaleQuantumToChar(GetPixelBlue(image,p));
+            *q++=ScaleQuantumToChar(GetPixelGreen(image,p));
+            *q++=ScaleQuantumToChar(GetPixelRed(image,p));
+            *q++=ScaleQuantumToChar(GetPixelAlpha(image,p));
+            p+=(ptrdiff_t) GetPixelChannels(image);
           }
           if (image->previous == (Image *) NULL)
             {

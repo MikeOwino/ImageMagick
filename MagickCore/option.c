@@ -1071,6 +1071,8 @@ static const OptionInfo
     { "-resample", 1L, SimpleOperatorFlag, MagickFalse },
     { "-respect-parenthesis", 0L, ImageInfoOptionFlag, MagickFalse },
     { "+respect-parenthesis", 0L, ImageInfoOptionFlag, MagickFalse },
+    { "-respect-parentheses", 0L, ImageInfoOptionFlag, MagickFalse },
+    { "+respect-parentheses", 0L, ImageInfoOptionFlag, MagickFalse },
     { "+reverse", 0L, DeprecateOptionFlag | FireOptionFlag, MagickTrue },
     { "-reverse", 0L, ListOperatorFlag | FireOptionFlag, MagickFalse },
     { "+roll", 1L, DeprecateOptionFlag, MagickTrue },
@@ -1541,6 +1543,8 @@ static const OptionInfo
     { "Lanczos2Sharp", Lanczos2SharpFilter, UndefinedOptionFlag, MagickFalse },
     { "LanczosRadius", LanczosRadiusFilter, UndefinedOptionFlag, MagickFalse },
     { "LanczosSharp", LanczosSharpFilter, UndefinedOptionFlag, MagickFalse },
+    { "MagicKernelSharp2013", MagicKernelSharp2013Filter, UndefinedOptionFlag, MagickFalse },
+    { "MagicKernelSharp2021", MagicKernelSharp2021Filter, UndefinedOptionFlag, MagickFalse },
     { "Mitchell", MitchellFilter, UndefinedOptionFlag, MagickFalse },
     { "Parzen", ParzenFilter, UndefinedOptionFlag, MagickFalse },
     { "Point", PointFilter, UndefinedOptionFlag, MagickFalse },
@@ -1840,6 +1844,7 @@ static const OptionInfo
   {
     { "Undefined", UndefinedErrorMetric, UndefinedOptionFlag, MagickTrue },
     { "AE", AbsoluteErrorMetric, UndefinedOptionFlag, MagickFalse },
+    { "DPC", DotProductCorrelationErrorMetric, UndefinedOptionFlag, MagickFalse },
     { "DSSIM", StructuralDissimilarityErrorMetric, UndefinedOptionFlag, MagickFalse },
     { "Fuzz", FuzzErrorMetric, UndefinedOptionFlag, MagickFalse },
     { "MAE", MeanAbsoluteErrorMetric, UndefinedOptionFlag, MagickFalse },
@@ -1847,6 +1852,7 @@ static const OptionInfo
     { "MSE", MeanSquaredErrorMetric, UndefinedOptionFlag, MagickFalse },
     { "NCC", NormalizedCrossCorrelationErrorMetric, UndefinedOptionFlag, MagickFalse },
     { "PAE", PeakAbsoluteErrorMetric, UndefinedOptionFlag, MagickFalse },
+    { "PHASE", PhaseCorrelationErrorMetric, UndefinedOptionFlag, MagickFalse },
     { "PHASH", PerceptualHashErrorMetric, UndefinedOptionFlag, MagickFalse },
     { "PSNR", PeakSignalToNoiseRatioErrorMetric, UndefinedOptionFlag, MagickFalse },
     { "RMSE", RootMeanSquaredErrorMetric, UndefinedOptionFlag, MagickFalse },
@@ -2746,7 +2752,7 @@ MagickExport ssize_t GetCommandOptionFlags(const CommandOption option,
 %
 %  The format of the GetCommandOptionInfo method is:
 %
-%      const char **GetCommandOptionInfo(const char *option)
+%      const OptionInfo *GetCommandOptionInfo(const char *option)
 %
 %  A description of each parameter follows:
 %

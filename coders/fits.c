@@ -187,8 +187,8 @@ static MagickOffsetType GetFITSPixelExtrema(Image *image,
   if (offset == -1)
     return(-1);
   number_pixels=(MagickSizeType) image->columns*image->rows;
-  *minima=DBL_MAX;
-  *maxima=DBL_MIN;
+  *minima=MagickMaximumValue;
+  *maxima=MagickMinimumValue;
   for (i=0; i < (MagickOffsetType) number_pixels; i++)
   {
     pixel=GetFITSPixel(image,bits_per_pixel);
@@ -347,7 +347,7 @@ static Image *ReadFITSImage(const ImageInfo *image_info,
         p=value;
         if (*p == '=')
           {
-            p+=2;
+            p+=(ptrdiff_t) 2;
             while (isspace((int) ((unsigned char) *p)) != 0)
               p++;
           }
@@ -487,7 +487,7 @@ static Image *ReadFITSImage(const ImageInfo *image_info,
               (unsigned char *) &pixel);
           SetPixelGray(image,ClampToQuantum(scale*(fits_info.scale*(pixel-
             fits_info.min_data)+fits_info.zero)),q);
-          q+=GetPixelChannels(image);
+          q+=(ptrdiff_t) GetPixelChannels(image);
         }
         if (SyncAuthenticPixels(image,exception) == MagickFalse)
           break;

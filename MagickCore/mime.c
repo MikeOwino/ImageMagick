@@ -15,7 +15,7 @@
 %                                 July 2000                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2000 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -905,6 +905,7 @@ static MagickBooleanType LoadMimeCache(LinkedListInfo *cache,const char *xml,
         (void) SubstituteString((char **) &token,"&lt;","<");
         (void) SubstituteString((char **) &token,"&amp;","&");
         (void) SubstituteString((char **) &token,"&quot;","\"");
+        (void) SubstituteString((char **) &token,"&apos;","'");
         mime_info->magic=(unsigned char *) AcquireString(token);
         q=mime_info->magic;
         for (p=token; *p != '\0'; )
@@ -918,7 +919,7 @@ static MagickBooleanType LoadMimeCache(LinkedListInfo *cache,const char *xml,
                     *end;
 
                   *q++=(unsigned char) strtol(p,&end,8);
-                  p+=(end-p);
+                  p+=(ptrdiff_t) (end-p);
                   mime_info->length++;
                   continue;
                 }
