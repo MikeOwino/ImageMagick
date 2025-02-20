@@ -17,7 +17,7 @@
 %                                 May 2001                                    %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2001 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -748,6 +748,7 @@ MagickExport MagickBooleanType LoadFontConfigFonts(SplayTreeInfo *type_cache,
     status;
 
   int
+    index,
     slant,
     width,
     weight;
@@ -768,10 +769,10 @@ MagickExport MagickBooleanType LoadFontConfigFonts(SplayTreeInfo *type_cache,
   font_config=FcConfigGetCurrent();
   if (font_config == (FcConfig *) NULL)
     return(MagickFalse);
-  FcConfigSetRescanInterval(font_config,0);
+  (void) FcConfigSetRescanInterval(font_config,0);
   font_set=(FcFontSet *) NULL;
   object_set=FcObjectSetBuild(FC_FULLNAME,FC_FAMILY,FC_STYLE,FC_SLANT,
-    FC_WIDTH,FC_WEIGHT,FC_FILE,(char *) NULL);
+    FC_WIDTH,FC_WEIGHT,FC_FILE,FC_INDEX,(char *) NULL);
   if (object_set != (FcObjectSet *) NULL)
     {
       pattern=FcPatternCreate();
@@ -825,6 +826,9 @@ MagickExport MagickBooleanType LoadFontConfigFonts(SplayTreeInfo *type_cache,
     type_info->name=ConstantString(name);
     (void) SubstituteString(&type_info->name," ","-");
     type_info->family=ConstantString((const char *) family);
+    status=FcPatternGetInteger(font_set->fonts[i],FC_INDEX,0,&index);
+    if (status == FcResultMatch)
+      type_info->face=(size_t) index;
     status=FcPatternGetInteger(font_set->fonts[i],FC_SLANT,0,&slant);
     type_info->style=NormalStyle;
     if (slant == FC_SLANT_ITALIC)
@@ -932,12 +936,10 @@ static MagickBooleanType IsTypeTreeInstantiated(ExceptionInfo *exception)
 */
 MagickExport MagickBooleanType ListTypeInfo(FILE *file,ExceptionInfo *exception)
 {
-  char
-    weight[MagickPathExtent];
-
   const char
     *family,
     *glyphs,
+    *metrics,
     *name,
     *path,
     *stretch,
@@ -958,7 +960,6 @@ MagickExport MagickBooleanType ListTypeInfo(FILE *file,ExceptionInfo *exception)
   type_info=GetTypeInfoList("*",&number_fonts,exception);
   if (type_info == (const TypeInfo **) NULL)
     return(MagickFalse);
-  *weight='\0';
   path=(const char *) NULL;
   for (i=0; i < (ssize_t) number_fonts; i++)
   {
@@ -969,25 +970,30 @@ MagickExport MagickBooleanType ListTypeInfo(FILE *file,ExceptionInfo *exception)
          (type_info[i]->path != (char *) NULL))
       (void) FormatLocaleFile(file,"\nPath: %s\n",type_info[i]->path);
     path=type_info[i]->path;
-    name="unknown";
+    name="not defined";
     if (type_info[i]->name != (char *) NULL)
       name=type_info[i]->name;
-    family="unknown";
+    family="not defined";
     if (type_info[i]->family != (char *) NULL)
       family=type_info[i]->family;
     style=CommandOptionToMnemonic(MagickStyleOptions,type_info[i]->style);
     stretch=CommandOptionToMnemonic(MagickStretchOptions,type_info[i]->stretch);
-    glyphs="unknown";
+    metrics="not defined";
+    if (type_info[i]->metrics != (char *) NULL)
+      metrics=type_info[i]->metrics;
+    glyphs="not defined";
     if (type_info[i]->glyphs != (char *) NULL)
       glyphs=type_info[i]->glyphs;
-    (void) FormatLocaleString(weight,MagickPathExtent,"%.20g",(double)
-      type_info[i]->weight);
     (void) FormatLocaleFile(file,"  Font: %s\n",name);
     (void) FormatLocaleFile(file,"    family: %s\n",family);
     (void) FormatLocaleFile(file,"    style: %s\n",style);
     (void) FormatLocaleFile(file,"    stretch: %s\n",stretch);
-    (void) FormatLocaleFile(file,"    weight: %s\n",weight);
+    (void) FormatLocaleFile(file,"    weight: %.20g\n",(double)
+      type_info[i]->weight);
+    (void) FormatLocaleFile(file,"    metrics: %s\n",metrics);
     (void) FormatLocaleFile(file,"    glyphs: %s\n",glyphs);
+    (void) FormatLocaleFile(file,"    index: %d\n",(int)
+      type_info[i]->face);
   }
   (void) fflush(file);
   type_info=(const TypeInfo **) RelinquishMagickMemory((void *) type_info);
@@ -1254,8 +1260,7 @@ static MagickBooleanType LoadTypeCache(SplayTreeInfo *cache,const char *xml,
       {
         if (LocaleCompare((char *) keyword,"glyphs") == 0)
           {
-            if (SetTypeNodePath(filename,font_path,token,&type_info->glyphs) ==
-                MagickFalse)
+            if (SetTypeNodePath(filename,font_path,token,&type_info->glyphs) == MagickFalse)
               type_info=(TypeInfo *) DestroyTypeNode(type_info);
             break;
           }
@@ -1266,8 +1271,7 @@ static MagickBooleanType LoadTypeCache(SplayTreeInfo *cache,const char *xml,
       {
         if (LocaleCompare((char *) keyword,"metrics") == 0)
           {
-            if (SetTypeNodePath(filename,font_path,token,&type_info->metrics) ==
-                MagickFalse)
+            if (SetTypeNodePath(filename,font_path,token,&type_info->metrics) == MagickFalse)
               type_info=(TypeInfo *) DestroyTypeNode(type_info);
             break;
           }

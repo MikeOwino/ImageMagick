@@ -152,7 +152,7 @@ WandExport Image *GetImageFromMagickWand(const MagickWand *wand)
 %                                                                             %
 %                                                                             %
 %                                                                             %
-%   M a g i c k A d a p t i v e S h a r p e n I m a g e                       %
+%   M a g i c k A d a p t i v e B l u r I m a g e                             %
 %                                                                             %
 %                                                                             %
 %                                                                             %
@@ -930,8 +930,8 @@ WandExport MagickBooleanType MagickBilateralBlurImage(MagickWand *wand,
     (void) LogMagickEvent(WandEvent,GetMagickModule(),"%s",wand->name);
   if (wand->images == (Image *) NULL)
     ThrowWandException(WandError,"ContainsNoImages",wand->name);
-  blur_image=BilateralBlurImage(wand->images,radius,sigma,intensity_sigma,
-    spatial_sigma,wand->exception);
+  blur_image=BilateralBlurImage(wand->images,(size_t) radius,(size_t) sigma,
+    intensity_sigma,spatial_sigma,wand->exception);
   if (blur_image == (Image *) NULL)
     return(MagickFalse);
   ReplaceImageInList(&wand->images,blur_image);

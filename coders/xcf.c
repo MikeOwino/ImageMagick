@@ -17,7 +17,7 @@
 %                               November 2001                                 %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2001 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -480,7 +480,7 @@ static MagickBooleanType load_tile(Image *image,Image *tile_image,
           SetPixelAlpha(tile_image,ScaleCharToQuantum((unsigned char)
             inLayerInfo->alpha),q);
           graydata++;
-          q+=GetPixelChannels(tile_image);
+          q+=(ptrdiff_t) GetPixelChannels(tile_image);
         }
       }
     else
@@ -494,7 +494,7 @@ static MagickBooleanType load_tile(Image *image,Image *tile_image,
             SetPixelAlpha(tile_image,xcfdata->alpha == 255U ? TransparentAlpha :
               ScaleCharToQuantum((unsigned char) inLayerInfo->alpha),q);
             xcfdata++;
-            q+=GetPixelChannels(tile_image);
+            q+=(ptrdiff_t) GetPixelChannels(tile_image);
           }
         }
      if (SyncAuthenticPixels(tile_image,exception) == MagickFalse)
@@ -610,7 +610,7 @@ static MagickBooleanType load_tile_rle(Image *image,Image *tile_image,
                 break;
               }
             }
-            q+=GetPixelChannels(tile_image);
+            q+=(ptrdiff_t) GetPixelChannels(tile_image);
           }
         }
       else
@@ -666,7 +666,7 @@ static MagickBooleanType load_tile_rle(Image *image,Image *tile_image,
                 break;
               }
             }
-            q+=GetPixelChannels(tile_image);
+            q+=(ptrdiff_t) GetPixelChannels(tile_image);
           }
         }
     }
@@ -1156,7 +1156,6 @@ static Image *ReadXCFImage(const ImageInfo *image_info,ExceptionInfo *exception)
 
   size_t
     image_type,
-    precision,
     length;
 
   ssize_t
@@ -1193,12 +1192,17 @@ static Image *ReadXCFImage(const ImageInfo *image_info,ExceptionInfo *exception)
   if ((doc_info.width > 262144) || (doc_info.height > 262144))
     ThrowReaderException(CorruptImageError,"ImproperImageHeader");
   doc_info.image_type=ReadBlobMSBLong(image);
-  precision=150;
   if (doc_info.version >= 4)
     {
+      size_t
+        precision;
+
       precision=ReadBlobMSBLong(image);
-      if (precision == 0)
+      if ((precision == 0) && (doc_info.version == 4))
         precision=150;
+      if ((precision == 100) && (doc_info.version < 7))
+        precision=150;
+      /* we only support 8-bit gamma integer */
       if (precision != 150)
         ThrowReaderException(CoderError,"DataStorageTypeIsNotSupported");
     }

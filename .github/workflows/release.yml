@@ -15,7 +15,7 @@ name: release
 jobs:
   create_app_image:
     name: Create AppImage
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: ubuntu:20.04
 
@@ -105,8 +105,8 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ x64, arm64 ]
-        quantum: [ Q16 ]
-        hdri: [ HDRI ]
+        quantum: [ Q8, Q16 ]
+        hdri: [ HDRI, noHDRI ]
         exclude:
           - quantum: Q8
             hdri: HDRI
@@ -156,8 +156,8 @@ jobs:
       with:
         name: Windows-${{matrix.quantum}}${{matrix.hdri_flag}}-${{matrix.platform}}
         path: |
-          ImageMagick-Windows\Output\bin\*.xml
-          ImageMagick-Windows\Output\bin\*.exe
+          ImageMagick-Windows\Artifacts\bin\*.xml
+          ImageMagick-Windows\Artifacts\bin\*.exe
 
   version:
     name: Set release and version
@@ -195,8 +195,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        quantum: [ Q16 ]
-        hdri: [ HDRI ]
+        quantum: [ Q8, Q16 ]
+        hdri: [ HDRI, noHDRI ]
         exclude:
           - quantum: Q8
             hdri: HDRI
@@ -244,7 +244,7 @@ jobs:
       if: github.event_name != 'pull_request'
       with:
         name: Msix-${{matrix.quantum}}${{matrix.hdri_flag}}
-        path: 'ImageMagick-Windows\Installer\Msix\Output\ImageMagick.${{matrix.quantum}}${{matrix.hdri_flag}}.msixbundle'
+        path: 'ImageMagick-Windows\Installer\Msix\Artifacts\ImageMagick.${{matrix.quantum}}${{matrix.hdri_flag}}.msixbundle'
 
   create_release:
     name: Create Release
@@ -252,7 +252,7 @@ jobs:
     needs:
       - create_app_image
       - create_msix
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     permissions:
       contents: write
@@ -270,6 +270,8 @@ jobs:
         files: |
           artifacts/AppImage-clang/ImageMagick-*-clang-x86_64.AppImage
           artifacts/AppImage-gcc/ImageMagick-*-gcc-x86_64.AppImage
+          artifacts/Msix-Q8/ImageMagick.Q8.msixbundle
+          artifacts/Msix-Q16/ImageMagick.Q16.msixbundle
           artifacts/Msix-Q16-HDRI/ImageMagick.Q16-HDRI.msixbundle
 
   publish_msix:
@@ -283,8 +285,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        quantum: [ Q16 ]
-        hdri: [ HDRI ]
+        quantum: [ Q8, Q16 ]
+        hdri: [ HDRI, noHDRI ]
         exclude:
           - quantum: Q8
             hdri: HDRI

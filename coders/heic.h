@@ -1,5 +1,5 @@
 /*
-  Copyright @ 2018 ImageMagick Studio LLC, a non-profit organization
+  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization
   dedicated to making software imaging solutions freely available.
   
   You may not use this file except in compliance with the License.  You may
@@ -17,13 +17,21 @@
 #include "coders/coders-private.h"
 
 #define MagickHEICHeaders \
+  MagickCoderHeader("AVCI", 4, "ftypavci") \
   MagickCoderHeader("AVIF", 4, "ftypavif") \
+  MagickCoderHeader("AVIF", 4, "ftypavis") \
   MagickCoderHeader("HEIC", 4, "ftypheic") \
   MagickCoderHeader("HEIC", 4, "ftypheix") \
+  MagickCoderHeader("HEIC", 4, "ftyphevc") \
+  MagickCoderHeader("HEIC", 4, "ftypheim") \
+  MagickCoderHeader("HEIC", 4, "ftypheis") \
+  MagickCoderHeader("HEIC", 4, "ftyphevm") \
+  MagickCoderHeader("HEIC", 4, "ftyphevs") \
   MagickCoderHeader("HEIC", 4, "ftypmif1") \
   MagickCoderHeader("HEIC", 4, "ftypmsf1")
 
 #define MagickHEICAliases \
+  MagickCoderAlias("HEIC", "AVCI") \
   MagickCoderAlias("HEIC", "AVIF") \
   MagickCoderAlias("HEIC", "HEIF")
 

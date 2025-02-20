@@ -17,7 +17,7 @@
 %                                March 2001                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2001 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -1119,7 +1119,7 @@ static Image *ReadDPXImage(const ImageInfo *image_info,ExceptionInfo *exception)
               "InsufficientImageDataInFile");
           profile=AcquireProfileStringInfo("dpx:user-data",length,exception);
           if (profile == (StringInfo *) NULL)
-            offset=SeekBlob(image,length,SEEK_CUR);
+            offset=SeekBlob(image,(MagickOffsetType) length,SEEK_CUR);
           else
             {
               offset+=ReadBlob(image,length,GetStringInfoDatum(profile));

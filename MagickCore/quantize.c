@@ -622,7 +622,7 @@ static MagickBooleanType AssignImageColors(Image *image,QCubeInfo *cube_info,
                   SetPixelAlpha(image,ClampToQuantum(
                     image->colormap[index].alpha),q);
               }
-            q+=GetPixelChannels(image);
+            q+=(ptrdiff_t) GetPixelChannels(image);
           }
         }
         if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
@@ -905,7 +905,7 @@ static MagickBooleanType ClassifyImageColors(QCubeInfo *cube_info,
       else
         node_info->total_color.alpha+=count*QuantumScale*(double)
           ClampPixel((double) OpaqueAlpha);
-      p+=count*(ssize_t) GetPixelChannels(image);
+      p+=(ptrdiff_t) count*(ssize_t) GetPixelChannels(image);
     }
     if (cube_info->colors > cube_info->maximum_colors)
       {
@@ -1017,7 +1017,7 @@ static MagickBooleanType ClassifyImageColors(QCubeInfo *cube_info,
       else
         node_info->total_color.alpha+=count*QuantumScale*(double)
           ClampPixel((MagickRealType) OpaqueAlpha);
-      p+=count*(ssize_t) GetPixelChannels(image);
+      p+=(ptrdiff_t) count*(ssize_t) GetPixelChannels(image);
     }
     proceed=SetImageProgress(image,ClassifyImageTag,(MagickOffsetType) y,
       image->rows);
@@ -2292,7 +2292,7 @@ MagickExport MagickBooleanType GetImageQuantizeError(Image *image,
       mean_error+=distance*distance;
       if (distance > maximum_error)
         maximum_error=distance;
-      p+=GetPixelChannels(image);
+      p+=(ptrdiff_t) GetPixelChannels(image);
     }
   }
   image_view=DestroyCacheView(image_view);
@@ -2708,7 +2708,7 @@ MagickExport MagickBooleanType KmeansImage(Image *image,
         kmeans_pixels[id][k].count++;
         kmeans_pixels[id][k].distortion+=min_distance;
         SetPixelIndex(image,(Quantum) k,q);
-        q+=GetPixelChannels(image);
+        q+=(ptrdiff_t) GetPixelChannels(image);
       }
       if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
         status=MagickFalse;
@@ -2853,8 +2853,8 @@ static inline double MagickRound(double x)
 
 static inline Quantum PosterizePixel(const Quantum pixel,const size_t levels)
 {
-  double posterize_pixel = QuantumRange*MagickRound(QuantumScale*(double)
-    pixel*(levels-1.0))/MagickMax(levels-1.0,1.0);
+  double posterize_pixel = QuantumRange*MagickRound(QuantumScale*(double) pixel*
+    ((double) levels-1.0))/MagickMax((double) levels-1.0,1.0);
   return(ClampToQuantum((MagickRealType) posterize_pixel));
 }
 
@@ -2901,7 +2901,7 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
         if ((traits & UpdatePixelTrait) != 0)
           channels++;
       }
-      number_columns=(size_t) pow(levels,channels);
+      number_columns=(size_t) pow((double) levels,(double) channels);
       map_image=CloneImage(image,number_columns,1,MagickTrue,exception);
       if (map_image == (Image *) NULL)
         {
@@ -2918,7 +2918,7 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
           *map_image_view;
 
         MagickRealType
-          scale = QuantumRange/(levels-1.0);
+          scale = (MagickRealType) QuantumRange/(levels-1.0);
 
         Quantum
           *magick_restrict q;
@@ -2941,11 +2941,11 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
           }
         for (x=0; x < (ssize_t) number_columns; x++)
         {
-          size_t remainder = x;
+          size_t remainder = (size_t) x;
           for (c=0; c < (ssize_t) GetPixelChannels(image); c++)
           {
-            PixelChannel channel = GetPixelChannelChannel (image, c);
-            PixelTrait traits = GetPixelChannelTraits (image, channel);
+            PixelChannel channel = GetPixelChannelChannel(image,c);
+            PixelTrait traits = GetPixelChannelTraits(image,channel);
             if ((traits & UpdatePixelTrait) != 0)
               {
                 size_t value = remainder % levels;
@@ -2953,7 +2953,7 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
                 remainder=(remainder-value)/levels;
               }
           }
-          q+=GetPixelChannels(map_image);
+          q+=(ptrdiff_t) GetPixelChannels(map_image);
         }
         if (SyncCacheViewAuthenticPixels(map_image_view,exception) == MagickFalse)
           {
@@ -2968,8 +2968,7 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
           /*
             Remap to the map image.
           */
-          QuantizeInfo *quantize_info = AcquireQuantizeInfo(
-            (ImageInfo *) NULL);
+          QuantizeInfo *quantize_info = AcquireQuantizeInfo((ImageInfo *) NULL);
           quantize_info->dither_method=dither_method;
           (void) RemapImage(quantize_info,image,map_image,exception);
           quantize_info=DestroyQuantizeInfo(quantize_info);
@@ -3048,7 +3047,7 @@ MagickExport MagickBooleanType PosterizeImage(Image *image,const size_t levels,
               continue;
             SetPixelChannel(image,channel,PosterizePixel(q[i],levels),q);
           }
-          q+=GetPixelChannels(image);
+          q+=(ptrdiff_t) GetPixelChannels(image);
         }
         if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
           status=MagickFalse;
@@ -3753,8 +3752,7 @@ MagickExport MagickBooleanType RemapImage(const QuantizeInfo *quantize_info,
   assert(exception->signature == MagickCoreSignature);
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
-  cube_info=GetQCubeInfo(quantize_info,MaxTreeDepth,
-    quantize_info->number_colors);
+  cube_info=GetQCubeInfo(quantize_info,MaxTreeDepth,MaxColormapSize);
   if (cube_info == (QCubeInfo *) NULL)
     ThrowBinaryException(ResourceLimitError,"MemoryAllocationFailed",
       image->filename);
@@ -3766,6 +3764,8 @@ MagickExport MagickBooleanType RemapImage(const QuantizeInfo *quantize_info,
         Classify image colors from the reference image.
       */
       cube_info->quantize_info->number_colors=cube_info->colors;
+      if (cube_info->colors > cube_info->maximum_colors)
+        ReduceImageColors(image,cube_info);
       status=AssignImageColors(image,cube_info,exception);
     }
   DestroyQCubeInfo(cube_info);
@@ -3998,7 +3998,7 @@ static MagickBooleanType SetGrayscaleImage(Image *image,
                }
             }
           SetPixelIndex(image,(Quantum) colormap_index[intensity],q);
-          q+=GetPixelChannels(image);
+          q+=(ptrdiff_t) GetPixelChannels(image);
         }
         if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
           status=MagickFalse;
@@ -4057,7 +4057,7 @@ static MagickBooleanType SetGrayscaleImage(Image *image,
     {
       SetPixelIndex(image,(Quantum) colormap_index[ScaleQuantumToMap(
         GetPixelIndex(image,q))],q);
-      q+=GetPixelChannels(image);
+      q+=(ptrdiff_t) GetPixelChannels(image);
     }
     if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
       status=MagickFalse;
@@ -4099,7 +4099,6 @@ static MagickBooleanType SetGrayscaleImage(Image *image,
 %    o exception: return any errors or warnings in this structure.
 %
 */
-
 MagickBooleanType SetImageColormap(Image *image,QCubeInfo *cube_info,
   ExceptionInfo *exception)
 {

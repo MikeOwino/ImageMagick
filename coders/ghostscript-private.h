@@ -1,5 +1,5 @@
 /*
-  Copyright @ 2019 ImageMagick Studio LLC, a non-profit organization
+  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization
   dedicated to making software imaging solutions freely available.
 
   You may not use this file except in compliance with the License.  You may
@@ -240,11 +240,11 @@ static inline void ReadGhostScriptXMPProfile(MagickByteBuffer *buffer,
   ssize_t
     count;
 
-  if (*profile != (StringInfo *) NULL)
-    return;
   status=CompareMagickByteBuffer(buffer,BeginXMPPacket,strlen(BeginXMPPacket));
   if (status == MagickFalse)
     return;
+  if (*profile != (StringInfo *) NULL)
+    *profile=DestroyStringInfo(*profile);
   length=8192;
   *profile=AcquireProfileStringInfo("xmp",length,exception);
   if (*profile == (StringInfo *) NULL)

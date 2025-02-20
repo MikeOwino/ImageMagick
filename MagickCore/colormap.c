@@ -236,7 +236,7 @@ MagickExport MagickBooleanType CycleColormapImage(Image *image,
         index+=(ssize_t) image->colors;
       SetPixelIndex(image,(Quantum) index,q);
       SetPixelViaPixelInfo(image,image->colormap+(ssize_t) index,q);
-      q+=GetPixelChannels(image);
+      q+=(ptrdiff_t) GetPixelChannels(image);
     }
     if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
       status=MagickFalse;
@@ -373,11 +373,11 @@ MagickExport MagickBooleanType SortColormapByIntensity(Image *image,
       ssize_t
         i;
 
-      i=ConstrainColormapIndex(image,GetPixelIndex(image,q),exception);
+      i=ConstrainColormapIndex(image,(ssize_t) GetPixelIndex(image,q),exception);
       index=(Quantum) pixels[i];
       SetPixelIndex(image,index,q);
       SetPixelViaPixelInfo(image,image->colormap+(ssize_t) index,q);
-      q+=GetPixelChannels(image);
+      q+=(ptrdiff_t) GetPixelChannels(image);
     }
     if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
       status=MagickFalse;

@@ -2476,6 +2476,7 @@ if test "$with_jpeg" != 'no'; then
             AC_MSG_RESULT([yes])
             have_jpeg='yes'
         fi
+        AC_CHECK_FUNCS([jpeg12_read_scanlines jpeg12_write_scanlines jpeg16_read_scanlines jpeg16_write_scanlines jpeg_enable_lossless jpeg_simple_lossless])
     else
         AC_MSG_RESULT([no])
     fi
@@ -2871,8 +2872,6 @@ dnl ===========================================================================
 #
 # Check for google libultrahdr delegate library
 #
-# Test for ultrahdr_api.h & test for uhdr_create_decoder in -luhdr
-#
 AC_ARG_WITH([uhdr],
     [AS_HELP_STRING([--with-uhdr],
                     [enable google ultrahdr support])],
@@ -2884,38 +2883,18 @@ if test "$with_uhdr" != 'yes'; then
 fi
 
 have_uhdr='no'
+UHDR_CFLAGS=""
 UHDR_LIBS=""
+UHDR_PKG=""
 if test "$with_uhdr" != 'no'; then
     AC_MSG_RESULT([-------------------------------------------------------------])
-    AC_MSG_CHECKING([for google ultrahdr])
+    PKG_CHECK_MODULES([UHDR],[libuhdr >= 1.3.0],[have_uhdr=yes],[have_uhdr=no])
     AC_MSG_RESULT([])
-    failed=0
-    passed=0
+fi
 
-    PKG_CHECK_MODULES([UHDR],[libuhdr >= 1.0],[have_uhdr=yes],[have_uhdr=no])
-    CFLAGS="$CFLAGS $UHDR_CFLAGS"
-    LIBS="$LIBS $UHDR_LIBS"
-    AC_LANG_PUSH([C++])
-    AC_CHECK_HEADER([ultrahdr_api.h],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`])
-    AC_CHECK_LIB([uhdr],[uhdr_create_decoder],[passed=`expr $passed + 1`],[failed=`expr $failed + 1`],[])
-
-    AC_MSG_CHECKING([if google ultrahdr package is complete])
-
-    if test $passed -gt 0; then
-        if test $failed -gt 0; then
-            AC_MSG_RESULT([no -- some components failed test])
-            have_uhdr='no (failed tests)'
-        else
-            UHDR_LIBS='-luhdr'
-            LIBS="$UHDR_LIBS $LIBS"
-            AC_DEFINE([UHDR_DELEGATE],[1],[Define if you have google ultrahdr library])
-            AC_MSG_RESULT([yes])
-            have_uhdr='yes'
-        fi
-    else
-        AC_MSG_RESULT([no])
-    fi
-    AC_LANG_POP([C++])
+if test "$have_uhdr" = 'yes'; then
+  AC_DEFINE([UHDR_DELEGATE],[1],[Define if you have google ultrahdr library])
+  CFLAGS="$UHDR_CFLAGS $CFLAGS"
 fi
 
 AM_CONDITIONAL([UHDR_DELEGATE],[test "$have_uhdr" = 'yes'])
@@ -2925,7 +2904,7 @@ AC_SUBST([UHDR_LIBS])
 dnl ===========================================================================
 
 #
-# Set URW Base35 font directory.
+# Set URW Base35 OTF font directory.
 #
 AC_ARG_WITH([urw-base35-font-dir],
     [AS_HELP_STRING([--with-urw-base35-font-dir=DIR],
@@ -2935,6 +2914,21 @@ AC_ARG_WITH([urw-base35-font-dir],
 
 if test "$with_urw_base35_font_dir" != 'default'; then
     DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-urw-base35-font-dir=$with_urw_base35_font_dir "
+fi
+
+dnl ===========================================================================
+
+#
+# Set URW Base35 Type1 font directory.
+#
+AC_ARG_WITH([urw-base35-type1-font-dir],
+    [AS_HELP_STRING([--with-urw-base35-type1-font-dir=DIR],
+                    [URW-base35 font directory])],
+    [with_urw_base35_type1_font_dir=$withval],
+    [with_urw_base35_type1_font_dir='default'])
+
+if test "$with_urw_base35_type1_font_dir" != 'default'; then
+    DISTCHECK_CONFIG_FLAGS="${DISTCHECK_CONFIG_FLAGS} --with-urw-base35-type1-font-dir=$with_urw_base35_type1_font_dir "
 fi
 
 dnl ===========================================================================
@@ -3139,15 +3133,15 @@ AC_DEFINE_UNQUOTED([EXECUTABLE_PATH],["$DEFINE_EXECUTABLE_PATH"],[Directory wher
 AC_SUBST([EXECUTABLE_PATH])
 
 # Path to ImageMagick lib
-LIBRARY_PATH="${LIB_DIR}/${LIBRARY_RELATIVE_PATH}"
-DEFINE_LIBRARY_PATH="${LIB_DIR}/${LIBRARY_RELATIVE_PATH}/"
+LIBRARY_ABSOLUTE_PATH="${LIB_DIR}/${LIBRARY_RELATIVE_PATH}"
+DEFINE_LIBRARY_ABSOLUTE_PATH="${LIB_DIR}/${LIBRARY_RELATIVE_PATH}/"
 case "${build_os}" in
   mingw* )
-    DEFINE_LIBRARY_PATH=`$WinPathScript "$DEFINE_LIBRARY_PATH" 1`
+    DEFINE_LIBRARY_ABSOLUTE_PATH=`$WinPathScript "$DEFINE_LIBRARY_ABSOLUTE_PATH" 1`
     ;;
 esac
-AC_DEFINE_UNQUOTED([LIBRARY_PATH],["$DEFINE_LIBRARY_PATH"],[Directory where architecture-dependent files live.])
-AC_SUBST([LIBRARY_PATH])
+AC_DEFINE_UNQUOTED([LIBRARY_ABSOLUTE_PATH],["$DEFINE_LIBRARY_ABSOLUTE_PATH"],[Directory where architecture-dependent files live.])
+AC_SUBST([LIBRARY_ABSOLUTE_PATH])
 
 #
 # path to local binaries
@@ -3164,7 +3158,7 @@ AC_SUBST([LIB_BIN_DIR])
 
 LIB_BIN_DIR_RELATIVE_PATH=$LIB_BIN_DIR
 AC_SUBST([LIB_BIN_DIR_RELATIVE_PATH])
-LIB_BIN_DIR_PATH="${LIBRARY_PATH}/${LIB_BIN_DIR_RELATIVE_PATH}"
+LIB_BIN_DIR_PATH="${LIBRARY_ABSOLUTE_PATH}/${LIB_BIN_DIR_RELATIVE_PATH}"
 AC_SUBST([LIB_BIN_DIR_PATH])
 
 #
@@ -3184,7 +3178,7 @@ AC_SUBST([MODULES_DIRNAME])
 
 MODULES_RELATIVE_PATH="${MODULES_DIRNAME}"
 AC_SUBST([MODULES_RELATIVE_PATH])
-MODULES_PATH="${LIBRARY_PATH}/${MODULES_RELATIVE_PATH}"
+MODULES_PATH="${LIBRARY_ABSOLUTE_PATH}/${MODULES_RELATIVE_PATH}"
 AC_SUBST([MODULES_PATH])
 
 #
@@ -3277,7 +3271,7 @@ AC_SUBST([SHAREARCH_DIRNAME])
 
 SHAREARCH_RELATIVE_PATH="${SHAREARCH_DIRNAME}"
 AC_SUBST([SHAREARCH_RELATIVE_PATH])
-SHAREARCH_PATH="${LIBRARY_PATH}/${SHAREARCH_RELATIVE_PATH}"
+SHAREARCH_PATH="${LIBRARY_ABSOLUTE_PATH}/${SHAREARCH_RELATIVE_PATH}"
 AC_SUBST([SHAREARCH_PATH])
 
 #
@@ -3293,6 +3287,7 @@ BPGDecodeDelegateDefault='bpgdec'
 BPGEncodeDelegateDefault='bpgenc'
 BlenderDecodeDelegateDefault='blender'
 BrowseDelegateDefault='xdg-open'
+ClipboardDelegateDefault='xclip'
 DNGDecodeDelegateDefault='darktable-cli'
 DOCDecodeDelegateDefault='libreoffice'
 GVCDecodeDelegateDefault='dot'
@@ -3338,7 +3333,8 @@ XPSDelegateDefault='gxps'
 AC_PATH_PROG([BPGDecodeDelegate],["$BPGDecodeDelegateDefault"],["$BPGDecodeDelegateDefault"])
 AC_PATH_PROG([BPGEncodeDelegate],["$BPGEncodeDelegateDefault"],["$BPGEncodeDelegateDefault"])
 AC_PATH_PROG([BlenderDecodeDelegate],["$BlenderDecodeDelegateDefault"],["$BlenderDecodeDelegateDefault"])
-AC_PATH_PROGS([BrowseDelegate],["$BrowseDelegateDefault" google-chrome firefox konqueror mozilla lynx],["$BrowseDelegateDefault"])
+AC_PATH_PROGS([BrowseDelegate],["$BrowseDelegateDefault" brave-browser microsoft-edge google-chrome firefox konqueror lynx],["$BrowseDelegateDefault"])
+AC_PATH_PROGS([ClipboardDelegate],["$ClipboardDelegateDefault"],["$ClipboardDelegateDefault"])
 AC_PATH_PROG([DNGDecodeDelegate],["$DNGDecodeDelegateDefault"],["$DNGDecodeDelegateDefault"])
 AC_PATH_PROG([DOCDecodeDelegate],["$DOCDecodeDelegateDefault"],["$DOCDecodeDelegateDefault"])
 AC_PATH_PROG([DVIDecodeDelegate],["$DVIDecodeDelegateDefault"],["$DVIDecodeDelegateDefault"])
@@ -3429,7 +3425,7 @@ dejavu_font_dir=''
 if test "${with_dejavu_font_dir}" != 'default'; then
   dejavu_font_dir="${with_dejavu_font_dir}/"
 else
-  for font_dir in "${prefix}/share/dejavu/fonts/" '/usr/share/fonts/dejavu/'; do
+  for font_dir in "${prefix}/share/fonts/dejavu" "${prefix}/share/dejavu-serif-fonts/fonts/" '/usr/share/fonts/dejavu-serif-fonts/' '/usr/share/fonts/truetype/dejavu/'; do
     if test -f "${font_dir}DejaVuSerif.ttf"; then
       dejavu_font_dir="${font_dir}"
       break 1
@@ -3489,12 +3485,19 @@ case "${build_os}" in
     ;;
 esac
 
-# URW-base35 fonts.
-AC_MSG_CHECKING([for URW-base35 fonts directory])
+# URW-base35 OTF fonts.
+AC_MSG_CHECKING([for URW-base35 OTF fonts directory])
 urw_base35_font_dir=''
 if test "${with_urw_base35_font_dir}" != 'default'; then
   urw_base35_font_dir="${with_urw_base35_font_dir}/"
-fi
+else
+  for font_dir in "${prefix}/share/urw-base35/fonts/" "${prefix}/share/fonts/opentype/urw-base35" '/usr/share/fonts/urw-base35/' '/usr/share/fonts/opentype/urw-base35/'; do
+    if test -f "${font_dir}URWGothic-Book.otf"; then
+      urw_base35_font_dir="${font_dir}"
+      break 1
+    fi
+  done
+fi 
 if test "${urw_base35_font_dir}x" != 'x'; then
   type_include_files="${type_include_files} "'<include file="type-urw-base35.xml" />'
   AC_MSG_RESULT([$urw_base35_font_dir])
@@ -3503,13 +3506,34 @@ else
 fi
 AC_SUBST([urw_base35_font_dir])
 
+# URW-base35 Type1 fonts.
+AC_MSG_CHECKING([for URW-base35 Type1 fonts directory])
+urw_base35_type1_font_dir=''
+if test "${with_urw_base35_type1_font_dir}" != 'default'; then
+  urw_base35_type1_font_dir="${with_urw_base35_type1_font_dir}/"
+else
+  for font_dir in "${prefix}/share/urw-base35/fonts/" "${prefix}/share/fonts/type1/urw-base35" '/usr/share/fonts/urw-base35/' '/usr/share/fonts/type1/urw-base35/'; do
+    if test -f "${font_dir}URWGothic-Book.t1"; then
+      urw_base35_type1_font_dir="${font_dir}"
+      break 1
+    fi
+  done
+fi 
+if test "${urw_base35_type1_font_dir}x" != 'x'; then
+  type_include_files="${type_include_files} "'<include file="type-urw-base35-type1.xml" />'
+  AC_MSG_RESULT([$urw_base35_type1_font_dir])
+else
+  AC_MSG_RESULT([not found!]);
+fi
+AC_SUBST([urw_base35_type1_font_dir])
+
 # Windows fonts.
 AC_MSG_CHECKING([for Windows fonts directory])
 windows_font_dir=''
 if test "${with_windows_font_dir}" != 'default'; then
   windows_font_dir="${with_windows_font_dir}/"
 else
-  for font_dir in '/usr/X11R6/lib/X11/fonts/truetype/' '/usr/X11R7/lib/X11/fonts/truetype/' '/usr/share/fonts/msttcore/' '/usr/share/fonts/microsoft/' '/usr/share/fonts/truetype/msttcorefonts/'; do
+  for font_dir in '/usr/share/wine/fonts/' '/usr/share/fonts/msttcore/' '/usr/share/fonts/microsoft/' '/usr/share/fonts/truetype/msttcorefonts/'; do
     if test -f "${font_dir}arial.ttf"; then
       windows_font_dir="${font_dir}"
       break 1
@@ -3611,6 +3635,7 @@ if test "$with_frozenpaths" != 'yes'; then
   BPGEncodeDelegate="$BPGEncodeDelegateDefault"
   BlenderDecodeDelegate="$BlenderDecodeDelegateDefault"
   BrowseDelegate="$BrowseDelegateDefault"
+  ClipboardDelegate="$ClipboardDelegateDefault"
   ConvertDelegate="$ConvertDelegateDefault"
   DisplayDelegate="$DisplayDelegateDefault"
   DNGDecodeDelegate="$DNGDecodeDelegateDefault"
@@ -3650,6 +3675,7 @@ AC_SUBST([BPGDecodeDelegate])
 AC_SUBST([BPGEncodeDelegate])
 AC_SUBST([BlenderDecodeDelegate])
 AC_SUBST([BrowseDelegate])
+AC_SUBST([ClipboardDelegate])
 AC_SUBST([ConvertDelegate])
 AC_SUBST([GVCDecodeDelegate])
 AC_SUBST([DVIDecodeDelegate])
@@ -4200,6 +4226,11 @@ if test "${urw_base35_font_dir}x" != 'x'; then
     result_urw_base35_font_dir=$urw_base35_font_dir
 fi
 
+result_urw_base35_type1_font_dir='none'
+if test "${urw_base35_type1_font_dir}x" != 'x'; then
+    result_urw_base35_type1_font_dir=$urw_base35_type1_font_dir
+fi
+
 result_windows_font_dir='none'
 if test "${windows_font_dir}x" != 'x'; then
     result_windows_font_dir=${windows_font_dir}
@@ -4209,6 +4240,7 @@ fi
 # Generate build environment
 # ==============================================================================
 AC_CONFIG_FILES([\
+    app-image/AppRun \
     common.shi \
     config/policy.xml:config/policy-"$magick_cv_with_security_policy".xml \
     config/configure.xml \
@@ -4221,6 +4253,7 @@ AC_CONFIG_FILES([\
     config/type-dejavu.xml \
     config/type-ghostscript.xml \
     config/type-urw-base35.xml \
+    config/type-urw-base35-type1.xml \
     config/type-windows.xml \
     config/type.xml \
     ImageMagick.spec \
@@ -4340,7 +4373,8 @@ Font configuration:
   Apple fonts       --with-apple-font-dir=$with_apple_font_dir	$result_apple_font_dir
   Dejavu fonts      --with-dejavu-font-dir=$with_dejavu_font_dir	$result_dejavu_font_dir
   Ghostscript fonts --with-gs-font-dir=$with_gs_font_dir		$result_ghostscript_font_dir
-  URW-base35 fonts  --with-urw-base35-font-dir=$with_urw_base35_font_dir	$result_urw_base35_font_dir
+  URW OTF fonts     --with-urw-base35-font-dir=$with_urw_base35_font_dir	$result_urw_base35_font_dir
+  URW Type1 fonts   --with-urw-base35-type1-font-dir=$with_urw_base35_type1_font_dir	$result_urw_base35_type1_font_dir
   Windows fonts     --with-windows-font-dir=$with_windows_font_dir	$result_windows_font_dir
 
 X11 configuration:

@@ -14,7 +14,7 @@ jobs:
     name: Build Linux
     container:
       image: ubuntu:20.04
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
@@ -52,9 +52,16 @@ jobs:
 
     - name: Build ImageMagick
       run: |
-        set -e
         make
-        make check
+
+    - name: Test ImageMagick
+      run: |
+        make check || exit_code=$?
+        if [ "$exit_code" != "0" ] ; then cat ./test-suite.log ; fi
+        exit $exit_code
+
+    - name: Install ImageMagick
+      run: |
         make install
 
   build_macos:
@@ -68,14 +75,13 @@ jobs:
       run: |
         set -e
         export HOMEBREW_NO_AUTO_UPDATE=1
-        brew install automake fftw flif jbigkit libraqm librsvg libtool libxml2 pango
+        brew install automake fftw flif jbigkit
 
     - name: Configure ImageMagick
       run: |
         export CFLAGS="-Wall -Wextra -Wno-incompatible-library-redeclaration -Wno-deprecated-declarations -Wno-unused-parameter -Wno-unused-function -Wno-missing-declarations -Wno-incompatible-pointer-types-discards-qualifiers"
-        export PKG_CONFIG_PATH="/usr/local/opt/libxml2/lib/pkgconfig"
         autoreconf -fiv
-        ./configure --with-quantum-depth=16 --enable-hdri=no --without-perl --with-fftw --with-flif --with-rsvg
+        ./configure --with-quantum-depth=16 --enable-hdri=no --without-perl --with-fftw --with-flif
 
     - name: Build ImageMagick
       run: |
@@ -104,9 +110,16 @@ jobs:
 
     - name: Build ImageMagick
       run: |
-        set -e
         make
-        make check
+
+    - name: Test ImageMagick
+      run: |
+        make check || exit_code=$?
+        if [ "$exit_code" != "0" ] ; then cat ./test-suite.log ; fi
+        exit $exit_code
+
+    - name: Install ImageMagick
+      run: |
         sudo make install
 
   build_windows:
@@ -134,9 +147,8 @@ jobs:
     - name: Clone repositories
       shell: cmd
       run: |
-        for /f "tokens=* USEBACKQ" %%F IN (`git -C ImageMagick rev-parse HEAD`) do set COMMIT_SHA=%%F
         cd ImageMagick-Windows
-        CloneRepositories.IM7.cmd %COMMIT_SHA%
+        CloneRepositories.IM7.cmd
 
     - name: Build configure
       shell: cmd
