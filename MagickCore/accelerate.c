@@ -21,7 +21,7 @@
 %                                April 2016                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2010 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -349,9 +349,9 @@ static MagickBooleanType LaunchHistogramKernel(MagickCLEnv clEnv,
   size_t
     global_work_size[2];
 
-  histogramKernel = NULL;
+  histogramKernel=NULL;
+  outputReady=MagickFalse;
 
-  outputReady = MagickFalse;
   colorspace = image->colorspace;
   method = image->intensity;
 
@@ -455,6 +455,7 @@ static Image *ComputeBlurImage(const Image* image,MagickCLEnv clEnv,
     i,
     lsize[2];
 
+  queue=NULL;
   filteredImage=NULL;
   imageBuffer=NULL;
   filteredImageBuffer=NULL;
@@ -470,7 +471,11 @@ static Image *ComputeBlurImage(const Image* image,MagickCLEnv clEnv,
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   filteredImage=cloneImage(image,exception);
   if (filteredImage == (Image *) NULL)
     goto cleanup;
@@ -661,12 +666,17 @@ static MagickBooleanType ComputeContrastImage(Image *image,MagickCLEnv clEnv,
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
 
+  queue=NULL;
   contrastKernel=NULL;
   imageBuffer=NULL;
   outputReady=MagickFalse;
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   imageBuffer=GetAuthenticOpenCLBuffer(image,device,exception);
   if (imageBuffer == (cl_mem) NULL)
     goto cleanup;
@@ -819,25 +829,28 @@ static MagickBooleanType ComputeContrastStretchImage(Image *image,
   assert(image->signature == MagickCoreSignature);
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
-
+  
+  queue=NULL;
+  image_view=NULL;
   histogram=NULL;
   stretch_map=NULL;
-  inputPixels = NULL;
-  imageBuffer = NULL;
-  histogramBuffer = NULL;
-  stretchMapBuffer = NULL;
-  histogramKernel = NULL;
-  stretchKernel = NULL;
-  queue = NULL;
-  outputReady = MagickFalse;
-
-  /* exception=(&image->exception); */
+  inputPixels=NULL;
+  imageBuffer=NULL;
+  histogramBuffer=NULL;
+  stretchMapBuffer=NULL;
+  histogramKernel=NULL;
+  stretchKernel=NULL;
+  outputReady=MagickFalse;
 
   /*
     Initialize opencl environment.
   */
-  device = RequestOpenCLDevice(clEnv);
-  queue = AcquireOpenCLCommandQueue(device);
+  device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
+  queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
 
   /*
     Allocate and initialize histogram arrays.
@@ -1378,20 +1391,26 @@ static Image *ComputeDespeckleImage(const Image *image,MagickCLEnv clEnv,
     *filteredPixels,
     *hostPtr;
 
-  outputReady = MagickFalse;
-  inputPixels = NULL;
-  filteredImage = NULL;
-  filteredImage_view = NULL;
-  filteredPixels = NULL;
-  imageBuffer = NULL;
-  filteredImageBuffer = NULL;
-  hullPass1 = NULL;
-  hullPass2 = NULL;
-  queue = NULL;
-  tempImageBuffer[0] = tempImageBuffer[1] = NULL;
+  queue=NULL;
+  image_view=NULL;
+  inputPixels=NULL;
+  filteredImage=NULL;
+  filteredImage_view=NULL;
+  filteredPixels=NULL;
+  imageBuffer=NULL;
+  filteredImageBuffer=NULL;
+  hullPass1=NULL;
+  hullPass2=NULL;
+  tempImageBuffer[0]=NULL;
+  tempImageBuffer[1]=NULL;
+  outputReady=MagickFalse;
 
-  device = RequestOpenCLDevice(clEnv);
-  queue = AcquireOpenCLCommandQueue(device);
+  device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
+  queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
 
   image_view=AcquireAuthenticCacheView(image,exception);
   inputPixels=GetCacheViewAuthenticPixels(image_view,0,0,image->columns,image->rows,exception);
@@ -1782,23 +1801,28 @@ static MagickBooleanType ComputeEqualizeImage(Image *image,MagickCLEnv clEnv,
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
 
+  queue=NULL;
+  image_view=NULL;
   map=NULL;
   histogram=NULL;
   equalize_map=NULL;
-  inputPixels = NULL;
-  imageBuffer = NULL;
-  histogramBuffer = NULL;
-  equalizeMapBuffer = NULL;
-  histogramKernel = NULL;
-  equalizeKernel = NULL;
-  queue = NULL;
-  outputReady = MagickFalse;
+  inputPixels=NULL;
+  imageBuffer=NULL;
+  histogramBuffer=NULL;
+  equalizeMapBuffer=NULL;
+  histogramKernel=NULL;
+  equalizeKernel=NULL;
+  outputReady=MagickFalse;
 
   /*
    * initialize opencl env
    */
-  device = RequestOpenCLDevice(clEnv);
-  queue = AcquireOpenCLCommandQueue(device);
+  device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
+  queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
 
   /*
     Allocate and initialize histogram arrays.
@@ -2204,14 +2228,19 @@ static MagickBooleanType ComputeFunctionImage(Image *image,MagickCLEnv clEnv,
   assert(image->signature == MagickCoreSignature);
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
-
-  outputReady=MagickFalse;
+  
+  queue=NULL;
   imageBuffer=NULL;
   functionKernel=NULL;
   parametersBuffer=NULL;
+  outputReady=MagickFalse;
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   imageBuffer=GetAuthenticOpenCLBuffer(image,device,exception);
   if (imageBuffer == (cl_mem) NULL)
     goto cleanup;
@@ -2353,12 +2382,17 @@ static MagickBooleanType ComputeGrayscaleImage(Image *image,MagickCLEnv clEnv,
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
 
-  outputReady=MagickFalse;
+  queue=NULL;
   imageBuffer=NULL;
   grayscaleKernel=NULL;
+  outputReady=MagickFalse;
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   imageBuffer=GetAuthenticOpenCLBuffer(image,device,exception);
   if (imageBuffer == (cl_mem) NULL)
     goto cleanup;
@@ -2508,19 +2542,24 @@ static Image *ComputeLocalContrastImage(const Image *image,MagickCLEnv clEnv,
     imageRows,
     passes;
 
-  filteredImage = NULL;
-  filteredImage_view = NULL;
-  imageBuffer = NULL;
-  filteredImageBuffer = NULL;
-  tempImageBuffer = NULL;
-  imageKernelBuffer = NULL;
-  blurRowKernel = NULL;
-  blurColumnKernel = NULL;
-  queue = NULL;
-  outputReady = MagickFalse;
+  queue=NULL;
+  image_view=NULL;
+  filteredImage=NULL;
+  filteredImage_view=NULL;
+  imageBuffer=NULL;
+  filteredImageBuffer=NULL;
+  tempImageBuffer=NULL;
+  imageKernelBuffer=NULL;
+  blurRowKernel=NULL;
+  blurColumnKernel=NULL;
+  outputReady=MagickFalse;
 
-  device = RequestOpenCLDevice(clEnv);
-  queue = AcquireOpenCLCommandQueue(device);
+  device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
+  queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
 
   /* Create and initialize OpenCL buffers. */
   {
@@ -2856,17 +2895,22 @@ static MagickBooleanType ComputeModulateImage(Image *image,MagickCLEnv clEnv,
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
 
-  inputPixels = NULL;
-  imageBuffer = NULL;
-  modulateKernel = NULL;
+  queue=NULL;
+  image_view=NULL;
+  inputPixels=NULL;
+  imageBuffer=NULL;
+  modulateKernel=NULL;
+  outputReady=MagickFalse;
 
   /*
    * initialize opencl env
    */
-  device = RequestOpenCLDevice(clEnv);
-  queue = AcquireOpenCLCommandQueue(device);
-
-  outputReady = MagickFalse;
+  device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
+  queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
 
   /* Create and initialize OpenCL buffers.
    inputPixels = AcquirePixelCachePixels(image, &length, exception);
@@ -3093,16 +3137,19 @@ static Image* ComputeMotionBlurImage(const Image *image,MagickCLEnv clEnv,
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
 
-  outputReady = MagickFalse;
-  filteredImage = NULL;
-  filteredImage_view = NULL;
-  imageBuffer = NULL;
-  filteredImageBuffer = NULL;
-  imageKernelBuffer = NULL;
-  motionBlurKernel = NULL;
-  queue = NULL;
+  queue=NULL;
+  image_view=NULL;
+  filteredImage=NULL;
+  filteredImage_view=NULL;
+  imageBuffer=NULL;
+  filteredImageBuffer=NULL;
+  imageKernelBuffer=NULL;
+  motionBlurKernel=NULL;
+  outputReady=MagickFalse;
 
-  device = RequestOpenCLDevice(clEnv);
+  device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
 
   /* Create and initialize OpenCL buffers. */
 
@@ -3195,7 +3242,9 @@ static Image* ComputeMotionBlurImage(const Image *image,MagickCLEnv clEnv,
     goto cleanup;
   }
 
-  queue = AcquireOpenCLCommandQueue(device);
+  queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   kernelBufferPtr = (float*)clEnv->library->clEnqueueMapBuffer(queue, imageKernelBuffer,
     CL_TRUE, CL_MAP_WRITE, 0, width * sizeof(float), 0, NULL, NULL, &clStatus);
   if (clStatus != CL_SUCCESS)
@@ -3799,6 +3848,7 @@ static Image *ComputeResizeImage(const Image* image,MagickCLEnv clEnv,
   size_t
     i;
 
+  queue=NULL;
   filteredImage=NULL;
   imageBuffer=NULL;
   filteredImageBuffer=NULL;
@@ -3807,7 +3857,11 @@ static Image *ComputeResizeImage(const Image* image,MagickCLEnv clEnv,
   outputReady=MagickFalse;
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   filteredImage=CloneImage(image,resizedColumns,resizedRows,MagickTrue,
     exception);
   if (filteredImage == (Image *) NULL)
@@ -4023,6 +4077,7 @@ static Image* ComputeRotationalBlurImage(const Image *image,MagickCLEnv clEnv,
   if (IsEventLogging() != MagickFalse)
     (void) LogMagickEvent(TraceEvent,GetMagickModule(),"%s",image->filename);
 
+  queue=NULL;
   filteredImage=NULL;
   imageBuffer=NULL;
   filteredImageBuffer=NULL;
@@ -4032,7 +4087,11 @@ static Image* ComputeRotationalBlurImage(const Image *image,MagickCLEnv clEnv,
   outputReady=MagickFalse;
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   filteredImage=cloneImage(image,exception);
   if (filteredImage == (Image *) NULL)
     goto cleanup;
@@ -4224,6 +4283,7 @@ static Image *ComputeUnsharpMaskImage(const Image *image,MagickCLEnv clEnv,
     i,
     lsize[2];
 
+  queue=NULL;
   filteredImage=NULL;
   imageBuffer=NULL;
   filteredImageBuffer=NULL;
@@ -4234,7 +4294,11 @@ static Image *ComputeUnsharpMaskImage(const Image *image,MagickCLEnv clEnv,
   outputReady=MagickFalse;
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   filteredImage=cloneImage(image,exception);
   if (filteredImage == (Image *) NULL)
     goto cleanup;
@@ -4408,6 +4472,7 @@ static Image *ComputeUnsharpMaskImageSingle(const Image *image,
     i,
     lsize[2];
 
+  queue=NULL;
   filteredImage=NULL;
   imageBuffer=NULL;
   filteredImageBuffer=NULL;
@@ -4416,7 +4481,11 @@ static Image *ComputeUnsharpMaskImageSingle(const Image *image,
   outputReady=MagickFalse;
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   filteredImage=cloneImage(image,exception);
   if (filteredImage == (Image *) NULL)
     goto cleanup;
@@ -4579,10 +4648,14 @@ static Image *ComputeWaveletDenoiseImage(const Image *image,MagickCLEnv clEnv,
   outputReady=MagickFalse;
 
   device=RequestOpenCLDevice(clEnv);
+  if (device == (MagickCLDevice) NULL)
+    goto cleanup;
   /* Work around an issue on low end Intel devices */
   if (strcmp("Intel(R) HD Graphics",device->name) == 0)
     goto cleanup;
   queue=AcquireOpenCLCommandQueue(device);
+  if (queue == (cl_command_queue) NULL)
+    goto cleanup;
   filteredImage=CloneImage(image,0,0,MagickTrue,
     exception);
   if (filteredImage == (Image *) NULL)

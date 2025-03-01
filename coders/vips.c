@@ -17,7 +17,7 @@
 %                                 April 2014                                  %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2014 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -354,7 +354,7 @@ static MagickBooleanType ReadVIPSPixelsNONE(Image *image,
                 SetPixelAlpha(image,ReadVIPSPixelNONE(image,format,type),q);
               }
         }
-      q+=GetPixelChannels(image);
+      q+=(ptrdiff_t) GetPixelChannels(image);
     }
     if (SyncAuthenticPixels(image,exception) == MagickFalse)
       return(MagickFalse);
@@ -759,7 +759,7 @@ static MagickBooleanType WriteVIPSImage(const ImageInfo *image_info,
                 WriteVIPSPixel(image,GetPixelAlpha(image,p));
               }
         }
-      p+=GetPixelChannels(image);
+      p+=(ptrdiff_t) GetPixelChannels(image);
     }
   }
   metadata=GetImageProperty(image,"vips:metadata",exception);

@@ -192,7 +192,8 @@ static int hls_to_rgb(int hue, int lum, int sat)
       magic1=(int) (2*(ssize_t) lum-magic2);
       b=(hue_to_rgb(magic1,magic2,(ssize_t) hue+(HLSMAX/3))*(ssize_t) RGBMAX+
         (HLSMAX/2))/HLSMAX;
-      r=(hue_to_rgb(magic1,magic2,hue)*RGBMAX+(ssize_t) (HLSMAX/2))/HLSMAX;
+      r=(hue_to_rgb(magic1,magic2,hue)*(ssize_t) RGBMAX+(ssize_t) (HLSMAX/2))/
+        HLSMAX;
       g=(hue_to_rgb(magic1,magic2,(ssize_t) hue-(HLSMAX/3))*(ssize_t) RGBMAX+
         (HLSMAX/2))/HLSMAX;
     }
@@ -1093,7 +1094,7 @@ static Image *ReadSIXELImage(const ImageInfo *image_info,
         continue;
       if ((*p == '}') && (*(p+1) == ';'))
         break;
-      p+=strlen(p);
+      p+=(ptrdiff_t) strlen(p);
       offset=p-sixel_buffer;
       if ((size_t) (offset+MagickPathExtent+1) < length)
         continue;
@@ -1165,7 +1166,7 @@ static Image *ReadSIXELImage(const ImageInfo *image_info,
           SetPixelRed(image,image->colormap[j].red,q);
           SetPixelGreen(image,image->colormap[j].green,q);
           SetPixelBlue(image,image->colormap[j].blue,q);
-          q+=GetPixelChannels(image);
+          q+=(ptrdiff_t) GetPixelChannels(image);
         }
         if (SyncAuthenticPixels(image,exception) == MagickFalse)
           break;
@@ -1410,7 +1411,7 @@ static MagickBooleanType WriteSIXELImage(const ImageInfo *image_info,
     {
       sixel_pixels[y*(ssize_t) image->columns+x]=((ssize_t)
         GetPixelIndex(image,q));
-      q+=GetPixelChannels(image);
+      q+=(ptrdiff_t) GetPixelChannels(image);
     }
   }
   status=sixel_encode_impl(sixel_pixels,image->columns,image->rows,

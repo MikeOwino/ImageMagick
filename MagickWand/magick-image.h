@@ -1,5 +1,5 @@
 /*
-  Copyright @ 2003 ImageMagick Studio LLC, a non-profit organization
+  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization
   dedicated to making software imaging solutions freely available.
 
   You may not use this file except in compliance with the License.  You may
@@ -177,11 +177,9 @@ extern WandExport MagickBooleanType
   MagickGetImageGreenPrimary(MagickWand *,double *,double *,double *),
   MagickGetImageLength(MagickWand *,MagickSizeType *),
   MagickGetImageMatteColor(MagickWand *,PixelWand *),
-  MagickGetImagePage(MagickWand *,size_t *,size_t *,ssize_t *,
-    ssize_t *),
+  MagickGetImagePage(MagickWand *,size_t *,size_t *,ssize_t *,ssize_t *),
   MagickGetImagePixelColor(MagickWand *,const ssize_t,const ssize_t,
     PixelWand *),
-  MagickGetImageRange(MagickWand *,double *,double *),
   MagickGetImageRedPrimary(MagickWand *,double *,double *,double *),
   MagickGetImageResolution(MagickWand *,double *,double *),
   MagickGetImageWhitePoint(MagickWand *,double *,double *,double *),

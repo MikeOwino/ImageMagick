@@ -17,7 +17,7 @@ name: daily
 jobs:
   change_log:
     name: 'Create ChangeLog.md'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
     - name: Checkout
@@ -46,7 +46,7 @@ jobs:
     name: 'Linux Q${{matrix.quantum}}-x64 hdri=${{matrix.hdri}} (${{matrix.modules}}) (${{ matrix.compiler }})'
     container:
       image: ubuntu:20.04
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     strategy:
       fail-fast: false
@@ -100,17 +100,22 @@ jobs:
         CFLAGS: ${{ matrix.compiler_flags }}
         CXXFLAGS: ${{ matrix.compiler_flags }}
       run: |
-        ./configure --with-quantum-depth=${{matrix.quantum}} --enable-hdri=${{matrix.hdri}} --${{matrix.modules}}
+        ./configure --with-perl --with-quantum-depth=${{matrix.quantum}} --enable-hdri=${{matrix.hdri}} --${{matrix.modules}}
 
     - name: Build ImageMagick
       run: |
-        make
+        make install
 
     - name: Test ImageMagick
       run: |
         make check || exit_code=$?
         if [ "$exit_code" != "0" ] ; then cat ./test-suite.log ; fi
         exit $exit_code
+
+    - name: Test PerlMagick
+      run: |
+        cd PerlMagick
+        make test TEST_VERBOSE=1
 
   build_windows:
     name: 'Windows Q${{matrix.quantum}}-${{matrix.platform}} hdri=${{matrix.hdri}} (${{matrix.buildType}})'
@@ -149,9 +154,8 @@ jobs:
     - name: Clone repositories
       shell: cmd
       run: |
-        for /f "tokens=* USEBACKQ" %%F IN (`git -C ImageMagick rev-parse HEAD`) do set COMMIT_SHA=%%F
         cd ImageMagick-Windows
-        CloneRepositories.IM7.cmd %COMMIT_SHA%
+        CloneRepositories.IM7.cmd
 
     - name: Download ChangeLog.md
       uses: actions/download-artifact@v4
@@ -204,9 +208,8 @@ jobs:
     - name: Clone repositories
       shell: cmd
       run: |
-        for /f "tokens=* USEBACKQ" %%F IN (`git -C ImageMagick rev-parse HEAD`) do set COMMIT_SHA=%%F
         cd ImageMagick-Windows
-        CloneRepositories.IM7.cmd %COMMIT_SHA%
+        CloneRepositories.IM7.cmd
 
     - name: Build configure
       shell: cmd

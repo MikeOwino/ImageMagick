@@ -626,7 +626,7 @@ MagickExport StringInfo *ConfigureFileToStringInfo(const char *filename)
       for (i=0; i < length; i+=(size_t) count)
       {
         count=read(file,string+i,(size_t) MagickMin(length-i,(size_t)
-          MAGICK_SSIZE_MAX));
+          MagickMaxBufferExtent));
         if (count <= 0)
           {
             count=0;
@@ -1365,7 +1365,7 @@ MagickExport double InterpretSiPrefixValue(const char *magick_restrict string,
               if (q[1] == 'i')
                 {
                   value*=pow(2.0,e/0.3);
-                  q+=2;
+                  q+=(ptrdiff_t) 2;
                 }
               else
                 {
@@ -1626,7 +1626,7 @@ MagickExport char *SanitizeString(const char *source)
   sanitize_source=AcquireString(source);
   p=sanitize_source;
   q=sanitize_source+strlen(sanitize_source);
-  for (p+=strspn(p,allowlist); p != q; p+=strspn(p,allowlist))
+  for (p+=strspn(p,allowlist); p != q; p+=(ptrdiff_t) strspn(p,allowlist))
     *p='_';
   return(sanitize_source);
 }
@@ -2445,7 +2445,7 @@ MagickExport char **StringToStrings(const char *text,size_t *count)
         {
           (void) FormatLocaleString(hex_string,MagickPathExtent,"%02x",*(p+j));
           (void) CopyMagickString(q,hex_string,MagickPathExtent);
-          q+=2;
+          q+=(ptrdiff_t) 2;
           if ((j % 0x04) == 0)
             *q++=' ';
         }
@@ -2657,7 +2657,7 @@ MagickExport MagickBooleanType SubstituteString(char **string,
       (void) memmove(p+replace_extent,p+search_extent,
         strlen(p+search_extent)+1);
     (void) memcpy(p,replace,replace_extent);
-    p+=replace_extent-1;
+    p+=(ptrdiff_t) replace_extent-1;
   }
   return(status);
 }

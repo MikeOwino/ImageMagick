@@ -2421,7 +2421,7 @@ static MagickBooleanType XAnnotateEditImage(Display *display,
                     x=annotate_info->x+(int) annotate_info->width;
                     y=annotate_info->y;
                     if (annotate_info->width != 0)
-                      p+=strlen(annotate_info->text);
+                      p+=(ptrdiff_t) strlen(annotate_info->text);
                     break;
                   }
               }
@@ -3745,7 +3745,7 @@ static MagickBooleanType XColorEditImage(Display *display,
                         SetPixelBlue(*image,ScaleShortToQuantum(
                           color.blue),q);
                       }
-                    q+=GetPixelChannels(*image);
+                    q+=(ptrdiff_t) GetPixelChannels(*image);
                   }
                   if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
                     break;
@@ -3819,7 +3819,7 @@ static MagickBooleanType XColorEditImage(Display *display,
                 SetPixelRed(*image,ScaleShortToQuantum(color.red),q);
                 SetPixelGreen(*image,ScaleShortToQuantum(color.green),q);
                 SetPixelBlue(*image,ScaleShortToQuantum(color.blue),q);
-                q+=GetPixelChannels(*image);
+                q+=(ptrdiff_t) GetPixelChannels(*image);
               }
               if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
                 break;
@@ -4305,7 +4305,7 @@ static MagickBooleanType XCompositeImage(Display *display,
         for (x=0; x < (int) image->columns; x++)
         {
           SetPixelAlpha(image,opacity,q);
-          q+=GetPixelChannels(image);
+          q+=(ptrdiff_t) GetPixelChannels(image);
         }
         if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
           break;
@@ -5048,15 +5048,15 @@ static MagickBooleanType XCropImage(Display *display,
             }
           if ((x < (int) (crop_info.x+RoiDelta)) &&
               (x > (int) (crop_info.x-RoiDelta)) &&
-              (y < (crop_info.y+(int) crop_info.height+RoiDelta)) &&
-              (y > (crop_info.y+(int) crop_info.height-RoiDelta)))
+              (y < (int) (crop_info.y+(int) crop_info.height+RoiDelta)) &&
+              (y > (int) (crop_info.y+(int) crop_info.height-RoiDelta)))
             {
               crop_info.x=(crop_info.x+(int) crop_info.width);
               state|=UpdateConfigurationState;
               break;
             }
-          if ((x < (crop_info.x+(int) crop_info.width+RoiDelta)) &&
-              (x > (crop_info.x+(int) crop_info.width-RoiDelta)) &&
+          if ((x < (int) (crop_info.x+(int) crop_info.width+RoiDelta)) &&
+              (x > (int) (crop_info.x+(int) crop_info.width-RoiDelta)) &&
               (y < (int) (crop_info.y+RoiDelta)) &&
               (y > (int) (crop_info.y-RoiDelta)))
             {
@@ -5064,10 +5064,10 @@ static MagickBooleanType XCropImage(Display *display,
               state|=UpdateConfigurationState;
               break;
             }
-          if ((x < (crop_info.x+(int) crop_info.width+RoiDelta)) &&
-              (x > (crop_info.x+(int) crop_info.width-RoiDelta)) &&
-              (y < (crop_info.y+(int) crop_info.height+RoiDelta)) &&
-              (y > (crop_info.y+(int) crop_info.height-RoiDelta)))
+          if ((x < (int) (crop_info.x+(int) crop_info.width+RoiDelta)) &&
+              (x > (int) (crop_info.x+(int) crop_info.width-RoiDelta)) &&
+              (y < (int) (crop_info.y+(int) crop_info.height+RoiDelta)) &&
+              (y > (int) (crop_info.y+(int) crop_info.height-RoiDelta)))
             {
               state|=UpdateConfigurationState;
               break;
@@ -5332,7 +5332,7 @@ static MagickBooleanType XCropImage(Display *display,
     for (x=0; x < (int) crop_info.width; x++)
     {
       SetPixelAlpha(image,TransparentAlpha,q);
-      q+=GetPixelChannels(image);
+      q+=(ptrdiff_t) GetPixelChannels(image);
     }
     if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
       break;
@@ -6441,6 +6441,8 @@ static void XImageCache(Display *display,XResourceInfo *resource_info,
       if (undo_image == (Image *) NULL)
         {
           (void) XBell(display,0);
+          ThrowXWindowException(ImageError,"NoImagesWereFound",
+            (*image)->filename);
           return;
         }
       cache_image=undo_image;
@@ -6999,8 +7001,8 @@ static DisplayCommand XImageWindowCommand(Display *display,
             }
           if ((key_symbol == XK_Down) || (key_symbol == XK_KP_Down))
             {
-              if (resource_info->quantum >= ((int) crop_info.height-crop_info.y))
-                resource_info->quantum=(int) crop_info.height-crop_info.y-1;
+              if (resource_info->quantum >= (int) (crop_info.height-(ssize_t) crop_info.y))
+                resource_info->quantum=(int) (crop_info.height-(ssize_t) crop_info.y-1);
               crop_info.y+=resource_info->quantum;
               crop_info.height-=(size_t) resource_info->quantum;
             }
@@ -7012,8 +7014,8 @@ static DisplayCommand XImageWindowCommand(Display *display,
             }
           if ((key_symbol == XK_Right) || (key_symbol == XK_KP_Right))
             {
-              if (resource_info->quantum >= ((int) crop_info.width-crop_info.x))
-                resource_info->quantum=(int) crop_info.width-crop_info.x-1;
+              if (resource_info->quantum >= (int) (crop_info.width-(ssize_t) crop_info.x))
+                resource_info->quantum=(int) (crop_info.width-(ssize_t) crop_info.x-1);
               crop_info.x+=resource_info->quantum;
               crop_info.width-=(size_t) resource_info->quantum;
             }
@@ -9583,8 +9585,8 @@ static void XMakePanImage(Display *display,XResourceInfo *resource_info,
   status=XMakeImage(display,resource_info,&windows->pan,image,
     windows->pan.width,windows->pan.height,exception);
   if (status == MagickFalse)
-    ThrowXWindowException(ResourceLimitError,
-     "MemoryAllocationFailed",image->filename);
+    ThrowXWindowException(ResourceLimitError,"MemoryAllocationFailed",
+      image->filename);
   (void) XSetWindowBackgroundPixmap(display,windows->pan.id,
     windows->pan.pixmap);
   (void) XClearWindow(display,windows->pan.id);
@@ -10105,7 +10107,7 @@ static MagickBooleanType XMatteEditImage(Display *display,
                 GetPixelInfoPixel(*image,q,&pixel);
                 if (IsFuzzyEquivalencePixelInfo(&pixel,&target))
                   SetPixelAlpha(*image,(Quantum) StringToLong(matte),q);
-                q+=GetPixelChannels(*image);
+                q+=(ptrdiff_t) GetPixelChannels(*image);
               }
               if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
                 break;
@@ -10167,7 +10169,7 @@ static MagickBooleanType XMatteEditImage(Display *display,
               for (x=0; x < (int) (*image)->columns; x++)
               {
                 SetPixelAlpha(*image,(Quantum) StringToLong(matte),q);
-                q+=GetPixelChannels(*image);
+                q+=(ptrdiff_t) GetPixelChannels(*image);
               }
               if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
                 break;
@@ -10268,8 +10270,8 @@ static Image *XOpenImage(Display *display,XResourceInfo *resource_info,
       filelist=(char **) AcquireQuantumMemory((size_t) count,sizeof(*filelist));
       if (filelist == (char **) NULL)
         {
-          ThrowXWindowException(ResourceLimitError,
-            "MemoryAllocationFailed","...");
+          ThrowXWindowException(ResourceLimitError,"MemoryAllocationFailed",
+            "...");
           (void) XFreeStringList(files);
           return((Image *) NULL);
         }
@@ -10489,24 +10491,24 @@ static void XPanImage(Display *display,XWindows *windows,XEvent *event,
         if (pan_info.x < (ssize_t) (pan_info.width/2))
           pan_info.x=0;
         else
-          pan_info.x=(x_factor*(pan_info.x-((int) pan_info.width/2)));
+          pan_info.x=(ssize_t) (x_factor*(pan_info.x-((int) pan_info.width/2)));
         if (pan_info.x < 0)
           pan_info.x=0;
         else
           if ((int) (pan_info.x+windows->image.width) >
               windows->image.ximage->width)
-            pan_info.x=windows->image.ximage->width-(int) windows->image.width;
+            pan_info.x=(ssize_t) (windows->image.ximage->width-(int) windows->image.width);
         if (pan_info.y < (ssize_t) (pan_info.height/2))
           pan_info.y=0;
         else
-          pan_info.y=(y_factor*(pan_info.y-((int) pan_info.height/2)));
+          pan_info.y=(ssize_t) (y_factor*(pan_info.y-((int) pan_info.height/2)));
         if (pan_info.y < 0)
           pan_info.y=0;
         else
           if ((int) (pan_info.y+windows->image.height) >
               windows->image.ximage->height)
-            pan_info.y=windows->image.ximage->height-(int)
-              windows->image.height;
+            pan_info.y=(ssize_t) (windows->image.ximage->height-(int)
+              windows->image.height);
         if ((windows->image.x != (int) pan_info.x) ||
             (windows->image.y != (int) pan_info.y))
           {
@@ -11224,6 +11226,7 @@ static MagickBooleanType XROIImage(Display *display,
       AddNoiseCommand,
       SharpenCommand,
       BlurCommand,
+      ThresholdCommand,
       EdgeDetectCommand,
       SpreadCommand,
       ShadeCommand,
@@ -11762,15 +11765,15 @@ static MagickBooleanType XROIImage(Display *display,
             }
           if ((x < (int) (roi_info.x+RoiDelta)) &&
               (x > (int) (roi_info.x-RoiDelta)) &&
-              (y < (roi_info.y+(int) roi_info.height+RoiDelta)) &&
-              (y > (roi_info.y+(int) roi_info.height-RoiDelta)))
+              (y < (int) (roi_info.y+(int) roi_info.height+RoiDelta)) &&
+              (y > (int) (roi_info.y+(int) roi_info.height-RoiDelta)))
             {
               roi_info.x=roi_info.x+(int) roi_info.width;
               state|=UpdateConfigurationState;
               break;
             }
-          if ((x < (roi_info.x+(int) roi_info.width+RoiDelta)) &&
-              (x > (roi_info.x+(int) roi_info.width-RoiDelta)) &&
+          if ((x < (int) (roi_info.x+(int) roi_info.width+RoiDelta)) &&
+              (x > (int) (roi_info.x+(int) roi_info.width-RoiDelta)) &&
               (y < (int) (roi_info.y+RoiDelta)) &&
               (y > (int) (roi_info.y-RoiDelta)))
             {
@@ -11778,10 +11781,10 @@ static MagickBooleanType XROIImage(Display *display,
               state|=UpdateConfigurationState;
               break;
             }
-          if ((x < (roi_info.x+(int) roi_info.width+RoiDelta)) &&
-              (x > (roi_info.x+(int) roi_info.width-RoiDelta)) &&
-              (y < (roi_info.y+(int) roi_info.height+RoiDelta)) &&
-              (y > (roi_info.y+(int) roi_info.height-RoiDelta)))
+          if ((x < (int) (roi_info.x+(int) roi_info.width+RoiDelta)) &&
+              (x > (int) (roi_info.x+(int) roi_info.width-RoiDelta)) &&
+              (y < (int) (roi_info.y+(int) roi_info.height+RoiDelta)) &&
+              (y > (int) (roi_info.y+(int) roi_info.height-RoiDelta)))
             {
               state|=UpdateConfigurationState;
               break;
@@ -13302,7 +13305,7 @@ static Image *XTileImage(Display *display,XResourceInfo *resource_info,
           for (j=0; j < (int) width; j++)
           {
             SetPixelViaPixelInfo(image,&pixel,s);
-            s+=GetPixelChannels(image);
+            s+=(ptrdiff_t) GetPixelChannels(image);
           }
           if (SyncCacheViewAuthenticPixels(image_view,exception) == MagickFalse)
             break;

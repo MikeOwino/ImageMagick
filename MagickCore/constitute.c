@@ -824,10 +824,13 @@ MagickExport Image *ReadImage(const ImageInfo *image_info,
         *clones;
 
       clones=CloneImages(image,read_info->scenes,exception);
+      image=DestroyImageList(image);
       if (clones != (Image *) NULL)
+        image=GetFirstImageInList(clones);
+      if (image == (Image *) NULL)
         {
-          image=DestroyImageList(image);
-          image=GetFirstImageInList(clones);
+          read_info=DestroyImageInfo(read_info);
+          return(image);
         }
     }
   InitializeConstituteInfo(read_info,&constitute_info);
@@ -1167,7 +1170,7 @@ MagickExport Image *ReadInlineImage(const ImageInfo *image_info,
         Extract media type.
       */
       if (LocaleNCompare(++p,"x-",2) == 0)
-        p+=2;
+        p+=(ptrdiff_t) 2;
       (void) CopyMagickString(read_info->filename,"data.",MagickPathExtent);
       q=read_info->filename+5;
       for (i=0; (*p != ';') && (*p != '\0') && (i < (MagickPathExtent-6)); i++)

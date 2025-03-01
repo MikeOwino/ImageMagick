@@ -1617,7 +1617,7 @@ MagickExport void SetMagickMemoryMethods(
 */
 MagickPrivate void SetMaxMemoryRequest(const MagickSizeType limit)
 {
-  max_memory_request=MagickMin(limit,GetMaxMemoryRequest());
+  max_memory_request=(size_t) MagickMin(limit,GetMaxMemoryRequest());
 }
 
 /*
@@ -1644,7 +1644,7 @@ MagickPrivate void SetMaxMemoryRequest(const MagickSizeType limit)
 */
 MagickPrivate void SetMaxProfileSize(const MagickSizeType limit)
 {
-  max_profile_size=MagickMin(limit,GetMaxProfileSize());
+  max_profile_size=(size_t) MagickMin(limit,GetMaxProfileSize());
 }
 
 /*
@@ -1734,7 +1734,7 @@ MagickPrivate MagickBooleanType ShredMagickMemory(void *memory,
         SetRandomKey(random_info,quantum,GetStringInfoDatum(key));
       (void) memcpy(p,GetStringInfoDatum(key),(size_t)
         MagickMin(quantum,length-j));
-      p+=quantum;
+      p+=(ptrdiff_t) quantum;
     }
     if (j < length)
       break;

@@ -23,7 +23,7 @@
 %                                March 2002                                   %
 %                                                                             %
 %                                                                             %
-%  Copyright @ 2002 ImageMagick Studio LLC, a non-profit organization         %
+%  Copyright @ 1999 ImageMagick Studio LLC, a non-profit organization         %
 %  dedicated to making software imaging solutions freely available.           %
 %                                                                             %
 %  You may not use this file except in compliance with the License.  You may  %
@@ -1057,7 +1057,7 @@ WandExport MagickBooleanType DrawComposite(DrawingWand *wand,
   for (i=(ssize_t) encoded_length; i > 0; i-=76)
   {
     (void) MVGPrintf(wand,"%.76s",p);
-    p+=76;
+    p+=(ptrdiff_t) 76;
     if (i > 76)
       (void) MVGPrintf(wand,"\n");
   }
@@ -1917,27 +1917,24 @@ WandExport void DrawGetStrokeColor(const DrawingWand *wand,
 WandExport double *DrawGetStrokeDashArray(const DrawingWand *wand,
   size_t *number_elements)
 {
-  double
-    *dasharray;
-
   const double
     *p;
 
   double
+    *dasharray,
     *q;
+
+  size_t
+    n = 0;
 
   ssize_t
     i;
-
-  size_t
-    n;
 
   assert(wand != (const DrawingWand *) NULL);
   assert(wand->signature == MagickWandSignature);
   if (wand->debug != MagickFalse)
     (void) LogMagickEvent(WandEvent,GetMagickModule(),"%s",wand->name);
   assert(number_elements != (size_t *) NULL);
-  n=0;
   p=CurrentContext->dash_pattern;
   if (p != (const double *) NULL)
     while (fabs(*p++) >= MagickEpsilon)
